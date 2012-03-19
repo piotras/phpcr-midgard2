@@ -24,6 +24,16 @@ class SQLQuerySelector
     private function computeResult()
     {
         $selects = array();
+        
+        /*echo $this->SQLQuery->getStatement();
+        foreach ($this->SQLQuery->getSelectors() as $selector) {
+            $selectorName = $selector->getSelectorName();
+            echo $selectorName . "(" . $selector->getNodeTypeName() . ") \n";
+        }*/
+
+        /* REMOVE */
+        //return; 
+
         foreach ($this->SQLQuery->getSelectors() as $selector) 
         {
             $propertyStorage = $this->holder->getPropertyStorage();
@@ -103,6 +113,7 @@ class SQLQuerySelector
 
     public function getQueryResult()
     {
+        //$this->computeResult();
         return new QueryResultSelector($this->SQLQuery->getSession(), $this->SQLQuery, $this->computeResult());
     }
 }

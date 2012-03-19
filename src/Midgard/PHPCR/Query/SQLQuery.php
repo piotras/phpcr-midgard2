@@ -111,8 +111,14 @@ class SQLQuery implements \PHPCR\Query\QueryInterface
 
     private function getQuerySelectHolder()
     {
-        if ($this->holder == null)
-            $this->holder = new Utils\QuerySelectHolder($this);
+        if ($this->holder == null) {
+            if (count($this->getColumns()) > 0 
+                && class_exists('\\MidgardSqlQuerySelectData')) {
+                $this->holder = new Utils\QuerySelectDataHolder($this);
+            } else {
+                $this->holder = new Utils\QuerySelectHolder($this);
+            }
+        }
         return $this->holder;
     }
 
@@ -135,31 +141,11 @@ class SQLQuery implements \PHPCR\Query\QueryInterface
 
         $holder = $this->getQuerySelectHolder(); 
 
-        if (count($this->getSelectors()) > 1 && count($this->getColumns()) > 1)
-        {
-            $select = new SQLQuerySelector($this, $holder);
-            return $select->getQueryResult();
-        }
-
         $manager = Utils\ConstraintManagerBuilder::factory($this, $holder, $this->getConstraint());
         if ($manager != null)
             $manager->addConstraint();
 
-        $qs = $holder->getQuerySelect();
-        $qs->set_constraint($holder->getDefaultConstraintGroup());
-
-        /* Ugly hack to satisfy JCR Query.
-         * We use SQL so offset without limit is RDBM provider specific.
-         * In SQLite you can set negative limit which is invalid in MySQL for example. */
-        if ($this->offset > 0 && $this->limit == 0) {
-            $this->setLimit(9999);
-        }
-
-        //\midgard_connection::get_instance()->set_loglevel("debug");
-        //\midgard_error::debug("EXECUTE QUERY : " . $this->statement . "");
-        $qs->execute();
-        //\midgard_connection::get_instance()->set_loglevel("warn");
-        return new QueryResult($this, $qs, $this->session);
+        return $holder->getQueryResult();
     }
 
     public function getBindVariableNames()
@@ -183,7 +169,12 @@ class SQLQuery implements \PHPCR\Query\QueryInterface
         $this->offset = $offset;
         $this->getQuerySelectHolder()->getQuerySelect()->set_offset($offset);
     }
-  
+
+    public function getOffset()
+    {
+        return $this->offset;
+    }
+ 
     public function getStatement()
     {
         if ($this->statement == null) {

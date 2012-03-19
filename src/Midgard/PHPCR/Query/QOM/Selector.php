@@ -10,7 +10,7 @@ class Selector extends QuerySelectHelper implements \PHPCR\Query\QOM\SelectorInt
     protected $nodeTypeName = null;
     protected $name = null;
 
-    public function __construct($nodeTypeName, $name = null)
+    public function __construct($nodeTypeName, $name)
     {
         $this->nodeTypeName = $nodeTypeName;
         $this->name = $name;
