@@ -112,8 +112,9 @@ class SQLQuery implements \PHPCR\Query\QueryInterface
     private function getQuerySelectHolder()
     {
         if ($this->holder == null) {
-            if (count($this->getColumns()) > 0 
-                && class_exists('\\MidgardSqlQuerySelectData')) {
+            //if (count($this->getColumns()) > 0 
+            //    && class_exists('\\MidgardSqlQuerySelectData')) {
+            if (class_exists('\\MidgardSqlQuerySelectData')) {
                 $this->holder = new Utils\QuerySelectDataHolder($this);
             } else {
                 $this->holder = new Utils\QuerySelectHolder($this);
@@ -140,15 +141,15 @@ class SQLQuery implements \PHPCR\Query\QueryInterface
         $this->validateQOM();
 
         $holder = $this->getQuerySelectHolder(); 
-
-        $manager = Utils\ConstraintManagerBuilder::factory($this, $holder, $this->getConstraint());
-        if ($manager != null)
-            $manager->addConstraint();
-
+    
         if (version_compare(mgd_version(), '10.05.6', '>')) {
             return $holder->getQueryResult();
         }
 
+        $manager = Utils\ConstraintManagerBuilder::factory($this, $holder, $this->getConstraint());
+        if ($manager != null)
+            $manager->addConstraint();
+ 
         $qs = $holder->getQuerySelect();
         $qs->set_constraint($holder->getDefaultConstraintGroup());
 

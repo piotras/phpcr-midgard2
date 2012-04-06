@@ -8,10 +8,13 @@ use \MidgardSqlQueryColumn;
 use \MidgardQueryProperty;
 use \MidgardQueryStorage;
 use Midgard\PHPCR\Utils\NodeMapper;
+use Midgard\PHPCR\Query\QueryResultDataSelector;
 
 class QuerySelectDataHolder extends QuerySelectHolder
 {
-    protected $midgardQueryColumns = null;
+    protected $midgardQueryColumns = array();
+
+    const NODE_QUALIFIER = 'midgard_node_qualifier';
 
     public function __construct (SQLQuery $query)
     {
@@ -53,6 +56,31 @@ class QuerySelectDataHolder extends QuerySelectHolder
         return $this->querySelect;
     }
 
+    protected function executeQuery()
+    {
+        echo "\n PHPCR QUERY : \n" . $this->query->getStatement() . "\n";
+        $querySelect = $this->getQuerySelect();
+        try {
+            $querySelect->execute();
+            print "\n MIDGARD QUERY : \n " . $querySelect->get_query_string() . " \n";
+        } catch (\Exception $e) {
+            print "\n EXCEPTION MIDGARD QUERY : \n " . $querySelect->get_query_string() . " \n";
+            print $e->getMessage();
+        }
+    }
+
+    public function getQueryResult()
+    {
+        /* Let every source add their constraints */
+        $this->query->getSource()->addMidgard2Constraints($this);
+        
+        /* Execute the query */
+        $this->executeQuery();
+
+        /* Return Result */
+        return new QueryResultDataSelector($this);
+    }
+
     private function getSelectorByName($name) 
     {
         foreach ($this->query->getSelectors() as $selector) {
@@ -74,9 +102,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
     {
         if ($this->midgardQueryColumns != null) {
             return $this->midgardQueryColumns;
-        }
-
-        echo "\n PHPCR QUERY : \n" . $this->query->getStatement() . "\n";
+        } 
 
         $querySelect = $this->getQuerySelect();
 
@@ -124,8 +150,8 @@ class QuerySelectDataHolder extends QuerySelectHolder
                     'midgard_node_property_parent_id'
                 );
                 $nodeColumn = new MidgardSqlQueryColumn(
-                    new MidgardQueryProperty('id', $this->midgardQueryColumns[$selectorName]['nodeStorage']),
-                    'midgard_node_qualifier',
+                    new MidgardQueryProperty('id', $this->getMidgard2QueryNodeStorage($selectorName)),
+                    self::NODE_QUALIFIER,
                     'midgard_node_id'
                 );
                 $querySelect->add_join(
@@ -140,13 +166,14 @@ class QuerySelectDataHolder extends QuerySelectHolder
                 /* Add implicit midgard_guid column so we can easily get object if requested */
                 $querySelect->add_column(
                     new MidgardSqlQueryColumn(
-                        new MidgardQueryProperty('guid', $this->midgardQueryColumns[$selectorName]['nodeStorage']),
-                        'midgard_node_qualifier',
+                        new MidgardQueryProperty('guid', $this->getMidgard2QueryNodeStorage($selectorName)),
+                        self::NODE_QUALIFIER,
                         'midgard_node_guid'
                     )
                 );
 
-                $cg = new \MidgardQueryConstraintGroup("AND");
+                //$cg = new \MidgardQueryConstraintGroup("AND");
+                $cg = $this->getDefaultConstraintGroup();
                 $cg->add_constraint(
                     new \MidgardSqlQueryConstraint($propertyColumn,
                         "<>", 
@@ -176,15 +203,19 @@ class QuerySelectDataHolder extends QuerySelectHolder
                 $querySelect->add_column($col);
             }
         }        
+    }
 
-        try {
-            $querySelect->execute();
-        } catch (\Exception $e) {
-            print "\n MIDGARD QUERY : \n " . $this->getQuerySelect()->get_query_string() . " \n";
-            print $e->getMessage();
+    public function getMidgard2QueryNodeStorage($selectorName)
+    {
+        if (isset($this->midgardQueryColumns[$selectorName])) {
+            return $this->midgardQueryColumns[$selectorName]['nodeStorage'];
         }
+        return $this->getDefaultNodeStorage();
+    }
 
-        die ("The End");
+    public function getNodeQualifier()
+    {
+        return self::NODE_QUALIFIER;
     }
 
     public function getPropertyStorage()

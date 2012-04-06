@@ -3,6 +3,7 @@
 namespace Midgard\PHPCR\Query\QOM;
 
 use Midgard\PHPCR\Query\Utils\QuerySelectHolder;
+use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
 use Midgard\PHPCR\Utils\NodeMapper;
 
 class QuerySelectHelper
@@ -43,5 +44,10 @@ class QuerySelectHelper
     {
         $this->setQuerySelectHolder($holder);
         return;
+    }
+
+    public function addMidgard2Constraints(QuerySelectDataHolder $holder) 
+    {
+        throw new \Exception (get_class($this) . "::" . "addMidgard2Constraints NOT IMPLEMENTED ");
     }
 }
