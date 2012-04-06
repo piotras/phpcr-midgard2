@@ -145,7 +145,29 @@ class SQLQuery implements \PHPCR\Query\QueryInterface
         if ($manager != null)
             $manager->addConstraint();
 
-        return $holder->getQueryResult();
+        if (version_compare(mgd_version(), '10.05.6', '>')) {
+            return $holder->getQueryResult();
+        }
+
+        $qs = $holder->getQuerySelect();
+        $qs->set_constraint($holder->getDefaultConstraintGroup());
+
+        /* Ugly hack to satisfy JCR Query.
+         * We use SQL so offset without limit is RDBM provider specific.
+         * In SQLite you can set negative limit which is invalid in MySQL for example. */
+        if ($this->offset > 0 && $this->limit == 0) {
+            $this->setLimit(9999);
+        }
+
+        if ($this->offset > 0 && $this->limit > 0) {
+            $this->getQuerySelectHolder()->getQuerySelect()->set_limit($this->limit);
+        }
+       
+        //\midgard_connection::get_instance()->set_loglevel("debug");
+        //\midgard_error::debug("EXECUTE QUERY : " . $this->statement . "");
+        $qs->execute();
+        //\midgard_connection::get_instance()->set_loglevel("warn");
+        return new QueryResult($this, $qs, $this->session);
     }
 
     public function getBindVariableNames()
@@ -156,7 +178,7 @@ class SQLQuery implements \PHPCR\Query\QueryInterface
     public function setLimit($limit)
     {
         $this->limit = $limit;
-        $this->getQuerySelectHolder()->getQuerySelect()->set_limit($limit);
+        //$this->getQuerySelectHolder()->getQuerySelect()->set_limit($limit);
     }
 
     public function getLimit()
@@ -206,5 +228,4 @@ class SQLQuery implements \PHPCR\Query\QueryInterface
     {
         throw new \PHPCR\RepositoryException("Not supported");
     }
-
 }
