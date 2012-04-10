@@ -4,6 +4,7 @@ namespace Midgard\PHPCR\Query;
 use Midgard\PHPCR\Utils\NodeMapper;
 use Midgard\PHPCR\Query\SQLQuery;
 use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
+use Midgard\PHPCR\Query\Utils\QueryNameMapper;
 use \ArrayIterator;
 
 class QuerySelectDataResult extends QueryResult
@@ -12,6 +13,7 @@ class QuerySelectDataResult extends QueryResult
     protected $result = null;
     protected $rows = null;
     protected $columns = null;
+    protected $columnNames = null;
     protected $nodes = null;
     protected $selectorNames = null;
     protected $resultProperties = null;
@@ -29,9 +31,31 @@ class QuerySelectDataResult extends QueryResult
         return $this->result;
     }
 
+    private function getMidgard2Columns()
+    {
+        if ($this->columns != null) {
+            return $this->columns;
+        }
+        $this->columns = $this->getMidgard2QueryResult()->get_columns();
+        return $this->columns;
+    }
+
     public function getColumnNames()
     {
-        throw new \Exception ("TO IMPLEMENT");
+        if ($this->columnNames != null) {
+            return $this->columnNames;
+        }
+        $this->columnNames = array();
+        $columns = $this->getMidgard2Columns();
+        foreach ($columns as $column) {
+            $name = $column->get_name();
+            if (QueryNameMapper::isReservedName($name)) {
+                continue;
+            }
+            $this->columnNames[] = 
+                NodeMapper::getPHPCRName($column->get_qualifier()) . "." . NodeMapper::getPHPCRProperty($name);
+        }
+        return $this->columnNames;
     }
 
     public function getNodes($prefetch = false)

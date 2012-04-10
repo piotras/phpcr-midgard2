@@ -8,14 +8,12 @@ use \MidgardSqlQueryColumn;
 use \MidgardQueryProperty;
 use \MidgardQueryStorage;
 use Midgard\PHPCR\Utils\NodeMapper;
+use Midgard\PHPCR\Query\Utils\QueryNameMapper;
 use Midgard\PHPCR\Query\QuerySelectDataResult;
 
 class QuerySelectDataHolder extends QuerySelectHolder
 {
     protected $midgardQueryColumns = array();
-
-    const NODE_QUALIFIER = 'midgard_node_qualifier';
-    const NODE_PROPERTY = 'midgard_node_property';
 
     public function __construct (SQLQuery $query)
     {
@@ -170,17 +168,17 @@ class QuerySelectDataHolder extends QuerySelectHolder
             if (!isset($this->midgardQueryColumns[$selectorName]['join']) || $this->midgardQueryColumns[$selectorName]['join'] === false) {
 
                 /* Add implicit join so we can select proper value of proper node type */
-                if ($realClassName != self::NODE_PROPERTY) {
+                if ($realClassName != QueryNameMapper::NODE_PROPERTY) {
                     /* JOIN phpcr_classname AS phpcr_classname ON (phpcr_classname.guid = midgard_node.objectguid) */
                      $propertyColumn = new MidgardSqlQueryColumn(
                         new MidgardQueryProperty('guid', $this->midgardQueryColumns[$selectorName]['storage']),
                         $safeSelectorName,
-                        $safeSelectorName . "_guid"
+                        QueryNameMapper::getGuidName($safeSelectorName)
                     );
                     $nodeColumn = new MidgardSqlQueryColumn(
                         new MidgardQueryProperty('objectguid', $this->getMidgard2QueryNodeStorage($selectorName)),
-                        self::NODE_QUALIFIER,
-                        'midgard_node_id'
+                        QueryNameMapper::NODE_QUALIFIER,
+                        QueryNameMapper::NODE_ID
                     );
                     $querySelect->add_join(
                         'INNER',
@@ -196,8 +194,8 @@ class QuerySelectDataHolder extends QuerySelectHolder
                     );
                     $nodeColumn = new MidgardSqlQueryColumn(
                         new MidgardQueryProperty('id', $this->getMidgard2QueryNodeStorage($selectorName)),
-                        self::NODE_QUALIFIER,
-                        'midgard_node_id'
+                        QueryNameMapper::NODE_QUALIFIER,
+                        QueryNameMapper::NODE_ID
                     );
                     $querySelect->add_join(
                         'INNER',
@@ -209,7 +207,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
                 $querySelect->add_column($propertyColumn);
                 $querySelect->add_column($nodeColumn);
 
-                if ($realClassName == self::NODE_PROPERTY) {
+                if ($realClassName == QueryNameMapper::NODE_PROPERTY) {
                     $cg = $this->getDefaultConstraintGroup();
                     $cg->add_constraint(
                         new \MidgardSqlQueryConstraint($propertyColumn,
@@ -240,8 +238,8 @@ class QuerySelectDataHolder extends QuerySelectHolder
         $querySelect->add_column(
             new MidgardSqlQueryColumn(
                 new MidgardQueryProperty('guid', $this->getMidgard2QueryNodeStorage($selectorName)),
-                self::NODE_QUALIFIER,
-                'midgard_node_guid'
+                QueryNameMapper::NODE_QUALIFIER,
+                QueryNameMapper::NODE_GUID 
             )
         );
 
@@ -261,11 +259,6 @@ class QuerySelectDataHolder extends QuerySelectHolder
             return $this->midgardQueryColumns[$selectorName]['nodeStorage'];
         }
         return $this->getDefaultNodeStorage();
-    }
-
-    public function getNodeQualifier()
-    {
-        return self::NODE_QUALIFIER;
     }
 
     public function getPropertyStorage()

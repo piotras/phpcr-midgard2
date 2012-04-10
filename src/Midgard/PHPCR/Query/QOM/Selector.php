@@ -7,6 +7,7 @@ use \MidgardSqlQueryColumn;
 use \MidgardQueryProperty;
 use \MidgardQueryValue;
 use Midgard\PHPCR\Utils\NodeMapper;
+use Midgard\PHPCR\Query\Utils\QueryNameMapper;
 
 /**
  * {@inheritDoc}
@@ -41,7 +42,7 @@ class Selector extends QuerySelectHelper implements \PHPCR\Query\QOM\SelectorInt
     {
         $column = new MidgardSqlQueryColumn(
             new MidgardQueryProperty('typename', $holder->getMidgard2QueryNodeStorage($this->name)),
-            $holder->getNodeQualifier(),
+            QueryNameMapper::getNodeQualifier(),
             'midgard_node_name'
         );
 

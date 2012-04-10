@@ -78,6 +78,7 @@ class Row implements \Iterator, \PHPCR\Query\RowInterface
 
         $this->values = array();
         $this->indexes = array();
+        throw new \Exception("WTF");
         $columns = $this->queryResult->getColumnNames();
         foreach ($columns as $name)
         {
