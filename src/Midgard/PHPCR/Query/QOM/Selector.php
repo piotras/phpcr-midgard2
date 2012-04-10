@@ -52,8 +52,29 @@ class Selector extends QuerySelectHelper implements \PHPCR\Query\QOM\SelectorInt
                 new \MidgardQueryValue(NodeMapper::getMidgardName($this->nodeTypeName))
             )
         );
+    }
 
-        echo "SELECTOR NAME : " . $this->getSelectorName() . "\n";
-        echo "NODE TYPE NAME : " . $this->getNodeTypeName() . "\n"; 
+    public function getAllColumns(QuerySelectDataHolder $holder)
+    {
+        $nodeTypeName = $this->getNodeTypeName();
+        $selectorName = $this->getSelectorName();
+        if ($selectorName == '' || $selectorName == null) {
+            $selectorName = NodeMapper::getMidgardName($nodeTypeName);
+        }
+        $ws = $holder->getSession()->getWorkspace();
+        $ntm = $ws->getNodeTypeManager();
+        $nt = $ntm->getNodeType($nodeTypeName);
+
+        $ret = array();
+        foreach ($nt->getDeclaredPropertyDefinitions() as $dpd) {
+            /* Do not select multiple values.
+             * Jackrabbit ignores them, not sure about JCR spec though */
+            if ($dpd->isMultiple()) {
+                continue;
+            }
+            $name = $dpd->getName();
+            $ret[] = new Column($name, $name, $selectorName);
+        }
+        return $ret;
     }
 }

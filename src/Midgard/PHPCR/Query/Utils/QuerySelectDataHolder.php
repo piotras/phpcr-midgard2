@@ -15,6 +15,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
     protected $midgardQueryColumns = array();
 
     const NODE_QUALIFIER = 'midgard_node_qualifier';
+    const NODE_PROPERTY = 'midgard_node_property';
 
     public function __construct (SQLQuery $query)
     {
@@ -101,23 +102,33 @@ class QuerySelectDataHolder extends QuerySelectHolder
     private function setMidgardQueryColumns()
     {
         if ($this->midgardQueryColumns != null) {
-            return $this->midgardQueryColumns;
+            return;
         } 
 
-        $querySelect = $this->getQuerySelect();
+        if (count($this->query->getColumns()) < 1) {
+            $this->setColumns($this->query->getSource()->getAllColumns($this));
+            return;
+        }
 
-        foreach ($this->query->getColumns() as $column) {
+        $this->setColumns($this->query->getColumns());
+    }
+
+    private function setColumns($columns)
+    {
+        $querySelect = $this->getQuerySelect();
+        foreach ($columns as $column) {
             $selectorName = $column->getSelectorName();
             $midgardName = NodeMapper::getMidgardPropertyName(str_replace(array('[', ']'), '', $column->getPropertyName()));
             $realPropertyName = $midgardName;
             $selector = $this->getSelectorByName($selectorName);
-            $nodeTypeName = NodeMapper::getMidgardName(str_replace(array('[', ']'), '', $selector->getNodeTypeName()));
+            $nodeTypeName = is_object($selector) ? $selector->getNodeTypeName() : $selectorName;
+            $nodeTypeName = NodeMapper::getMidgardName(str_replace(array('[', ']'), '', $nodeTypeName));
             $realClassName = $nodeTypeName;
 
             if ($this->isNativeProperty($realClassName, $midgardName) === false) {
                 /* Fallback to default midgard_node_property storage */
                 $realPropertyName = 'value';
-                $realClassName = 'midgard_node_property';
+                $realClassName = self::NODE_PROPERTY;
                 $addJoin = true;
             }
 
@@ -136,59 +147,66 @@ class QuerySelectDataHolder extends QuerySelectHolder
                 $safeSelectorName = $nodeTypeName;
             }
 
-            if (!isset($this->midgardQueryColumns[$selectorName]['join'])
-                || $this->midgardQueryColumns[$selectorName]['join'] === false) { 
-                /* Add implicit join so we can select proper value of proper node type */
-                if (!isset($this->midgardQueryColumns[$selectorName]['nodeStorage'])) {
-                    $this->midgardQueryColumns[$selectorName]['nodeStorage'] = new MidgardQueryStorage('midgard_node');
-                }
+            if (!isset($this->midgardQueryColumns[$selectorName]['join']) || $this->midgardQueryColumns[$selectorName]['join'] === false) {
 
-                /* JOIN midgard_node AS midgard_node_qualifier ON (midgard_node.id = midgard_node_property.parent) */ 
-                $propertyColumn = new MidgardSqlQueryColumn(
-                    new MidgardQueryProperty('parent', $this->midgardQueryColumns[$selectorName]['storage']),
-                    $safeSelectorName,
-                    'midgard_node_property_parent_id'
-                );
-                $nodeColumn = new MidgardSqlQueryColumn(
-                    new MidgardQueryProperty('id', $this->getMidgard2QueryNodeStorage($selectorName)),
-                    self::NODE_QUALIFIER,
-                    'midgard_node_id'
-                );
-                $querySelect->add_join(
-                    'INNER',
-                    $propertyColumn,
-                    $nodeColumn
-                );
+                /* Add implicit join so we can select proper value of proper node type */
+                if ($realClassName != self::NODE_PROPERTY) {
+                    /* JOIN phpcr_classname AS phpcr_classname ON (phpcr_classname.guid = midgard_node.objectguid) */
+                     $propertyColumn = new MidgardSqlQueryColumn(
+                        new MidgardQueryProperty('guid', $this->midgardQueryColumns[$selectorName]['storage']),
+                        $safeSelectorName,
+                        $safeSelectorName . "_guid"
+                    );
+                    $nodeColumn = new MidgardSqlQueryColumn(
+                        new MidgardQueryProperty('objectguid', $this->getMidgard2QueryNodeStorage($selectorName)),
+                        self::NODE_QUALIFIER,
+                        'midgard_node_id'
+                    );
+                    $querySelect->add_join(
+                        'INNER',
+                        $propertyColumn,
+                        $nodeColumn
+                    );                  
+                } else {
+                    /* JOIN midgard_node AS midgard_node_qualifier ON (midgard_node.id = midgard_node_property.parent) */ 
+                    $propertyColumn = new MidgardSqlQueryColumn(
+                        new MidgardQueryProperty('parent', $this->midgardQueryColumns[$selectorName]['storage']),
+                        $safeSelectorName,
+                        'midgard_node_property_parent_id'
+                    );
+                    $nodeColumn = new MidgardSqlQueryColumn(
+                        new MidgardQueryProperty('id', $this->getMidgard2QueryNodeStorage($selectorName)),
+                        self::NODE_QUALIFIER,
+                        'midgard_node_id'
+                    );
+                    $querySelect->add_join(
+                        'INNER',
+                        $propertyColumn,
+                        $nodeColumn
+                    );
+                }
 
                 $querySelect->add_column($propertyColumn);
                 $querySelect->add_column($nodeColumn);
 
-                /* Add implicit midgard_guid column so we can easily get object if requested */
-                $querySelect->add_column(
-                    new MidgardSqlQueryColumn(
-                        new MidgardQueryProperty('guid', $this->getMidgard2QueryNodeStorage($selectorName)),
-                        self::NODE_QUALIFIER,
-                        'midgard_node_guid'
-                    )
-                );
-
-                //$cg = new \MidgardQueryConstraintGroup("AND");
-                $cg = $this->getDefaultConstraintGroup();
-                $cg->add_constraint(
-                    new \MidgardSqlQueryConstraint($propertyColumn,
-                        "<>", 
-                        new \MidgardQueryValue("")
-                    )
-                );
-                $cg->add_constraint(
-                    new \MidgardSqlQueryConstraint($nodeColumn,
-                        "<>", 
-                        new \MidgardQueryValue("")
-                    )
-                );
-                $querySelect->set_constraint($cg);
+                if ($realClassName == self::NODE_PROPERTY) {
+                    $cg = $this->getDefaultConstraintGroup();
+                    $cg->add_constraint(
+                        new \MidgardSqlQueryConstraint($propertyColumn,
+                            "<>", 
+                            new \MidgardQueryValue("")
+                        )
+                    );
+                    $cg->add_constraint(
+                        new \MidgardSqlQueryConstraint($nodeColumn,
+                            "<>", 
+                            new \MidgardQueryValue("")
+                        )
+                    );
+                    $querySelect->set_constraint($cg);
+                }
             }
-
+ 
             $midgardQueryColumn = new MidgardSqlQueryColumn(
                 new MidgardQueryProperty($realPropertyName, $this->midgardQueryColumns[$selectorName]['storage']),
                 $safeSelectorName,
@@ -197,6 +215,15 @@ class QuerySelectDataHolder extends QuerySelectHolder
             $this->midgardQueryColumns[$selectorName]['columns'][] = $midgardQueryColumn;
             $this->midgardQueryColumns[$selectorName]['join'] = true;
         }
+
+        /* Add implicit midgard_guid column so we can easily get object if requested */
+        $querySelect->add_column(
+            new MidgardSqlQueryColumn(
+                new MidgardQueryProperty('guid', $this->getMidgard2QueryNodeStorage($selectorName)),
+                self::NODE_QUALIFIER,
+                'midgard_node_guid'
+            )
+        );
 
         foreach ($this->midgardQueryColumns as $name => $data) { 
             foreach ($data['columns'] as $col) {
@@ -208,6 +235,9 @@ class QuerySelectDataHolder extends QuerySelectHolder
     public function getMidgard2QueryNodeStorage($selectorName)
     {
         if (isset($this->midgardQueryColumns[$selectorName])) {
+            if (!isset($this->midgardQueryColumns[$selectorName]['nodeStorage'])) {
+                $this->midgardQueryColumns[$selectorName]['nodeStorage'] = new MidgardQueryStorage('midgard_node');
+            }
             return $this->midgardQueryColumns[$selectorName]['nodeStorage'];
         }
         return $this->getDefaultNodeStorage();

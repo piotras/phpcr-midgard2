@@ -50,4 +50,9 @@ class QuerySelectHelper
     {
         throw new \Exception (get_class($this) . "::" . "addMidgard2Constraints NOT IMPLEMENTED ");
     }
+
+    public function getAllColumns(QuerySelectDataHolder $holder) 
+    {
+        throw new \Exception (get_class($this) . "::" . "getAllColumns NOT IMPLEMENTED ");
+    }
 }

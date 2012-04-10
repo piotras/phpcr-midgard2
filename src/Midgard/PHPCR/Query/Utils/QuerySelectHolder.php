@@ -121,4 +121,9 @@ class QuerySelectHolder
         $this->executeQuery();
         return new QueryResult($this->query, $this->querySelect, $this->query->getSession());
     }
+
+    public function getSession()
+    {
+        return $this->query->getSession();
+    }
 }
