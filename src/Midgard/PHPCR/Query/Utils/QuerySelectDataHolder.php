@@ -8,7 +8,7 @@ use \MidgardSqlQueryColumn;
 use \MidgardQueryProperty;
 use \MidgardQueryStorage;
 use Midgard\PHPCR\Utils\NodeMapper;
-use Midgard\PHPCR\Query\QueryResultDataSelector;
+use Midgard\PHPCR\Query\QuerySelectDataResult;
 
 class QuerySelectDataHolder extends QuerySelectHolder
 {
@@ -61,6 +61,26 @@ class QuerySelectDataHolder extends QuerySelectHolder
     {
         echo "\n PHPCR QUERY : \n" . $this->query->getStatement() . "\n";
         $querySelect = $this->getQuerySelect();
+
+        /* Set limit */
+        $limit = $this->query->getLimit();
+        if ($limit > 0) {
+            $querySelect->set_limit($limit);
+        }
+
+        /* Set offset */
+        $offset = $this->query->getOffset();
+        if ($offset > 0) {
+            $querySelect->set_offset($offset);
+        }
+     
+        /* Ugly hack to satisfy JCR Query.
+         * We use SQL so offset without limit is RDBM provider specific.
+         * In SQLite you can set negative limit which is invalid in MySQL for example. */
+        if ($offset > 0 && $limit == 0) {
+            $querySelect->set_limit(9999);
+        }
+
         try {
             $querySelect->execute();
             print "\n MIDGARD QUERY : \n " . $querySelect->get_query_string() . " \n";
@@ -79,7 +99,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
         $this->executeQuery();
 
         /* Return Result */
-        return new QueryResultDataSelector($this);
+        return new QuerySelectDataResult($this);
     }
 
     private function getSelectorByName($name) 
