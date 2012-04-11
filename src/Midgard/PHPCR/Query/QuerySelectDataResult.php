@@ -71,12 +71,13 @@ class QuerySelectDataResult extends QueryResult
         }
 
         $rows = $this->getRows();
-        $this->nodes = array();
+        $ret = array(); 
         foreach($this->midgardRows as $row) {
             $guid = $row->get_value(QueryNameMapper::NODE_GUID);
             $node = $this->holder->getSession()->getNodeRegistry()->getByMidgardGuid($guid);
-            $this->nodes[$node->getPath()] = $node;
+            $ret[$node->getPath()] = $node;
         }
+        $this->nodes = new ArrayIterator($ret);
         return $this->nodes;
     }
 
