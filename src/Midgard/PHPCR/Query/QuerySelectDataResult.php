@@ -12,6 +12,7 @@ class QuerySelectDataResult extends QueryResult
     protected $holder = null;
     protected $result = null;
     protected $rows = null;
+    protected $midgardRows = null;
     protected $columns = null;
     protected $columnNames = null;
     protected $nodes = null;
@@ -21,6 +22,11 @@ class QuerySelectDataResult extends QueryResult
     public function __construct(QuerySelectDataHolder $holder)
     {
         $this->holder = $holder;
+    }
+
+    public function getHolder()
+    {
+        return $this->holder;
     }
 
     private function getMidgard2QueryResult()
@@ -60,7 +66,18 @@ class QuerySelectDataResult extends QueryResult
 
     public function getNodes($prefetch = false)
     {
-        throw new \Exception ("TO IMPLEMENT");
+        if ($this->nodes != null) {
+            return $this->nodes;
+        }
+
+        $rows = $this->getRows();
+        $this->nodes = array();
+        foreach($this->midgardRows as $row) {
+            $guid = $row->get_value(QueryNameMapper::NODE_GUID);
+            $node = $this->holder->getSession()->getNodeRegistry()->getByMidgardGuid($guid);
+            $this->nodes[$node->getPath()] = $node;
+        }
+        return $this->nodes;
     }
 
     public function getRows()
@@ -70,12 +87,12 @@ class QuerySelectDataResult extends QueryResult
         }
         
         $this->getMidgard2QueryResult();
-        $midgardRows = $this->result->get_rows();
+        $this->midgardRows = $this->result->get_rows();
         $ret = array();
 
         $score = 0;
-        foreach($midgardRows as $midgardRow) {
-            $ret[] = new QuerySelectDataRow($this->holder, ++$score, $midgardRow);
+        foreach ($this->midgardRows as $midgardRow) {
+            $ret[] = new QuerySelectDataRow($this, ++$score, $midgardRow);
         }
 
         $this->rows = new \ArrayIterator($ret);
@@ -84,7 +101,22 @@ class QuerySelectDataResult extends QueryResult
 
     public function getSelectorNames()
     {
-        throw new \Exception ("TO IMPLEMENT");
+        if ($this->selectorNames != null) {
+            return $this->selectorNames;
+        }
+        $this->selectorNames = array();
+        $columns = $this->getMidgard2Columns();
+        foreach ($columns as $column) {
+            $name = $column->get_name();
+            if (QueryNameMapper::isReservedName($name)) {
+                continue;
+            }
+            $name = NodeMapper::getPHPCRName($column->get_qualifier());
+            if (in_array($name, $this->selectorNames) === false) {
+                $this->selectorNames[] = $name;
+            }
+        }
+        return $this->selectorNames;
     }
 
     public function getIterator()

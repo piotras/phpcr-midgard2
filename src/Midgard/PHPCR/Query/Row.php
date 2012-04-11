@@ -69,7 +69,7 @@ class Row implements \Iterator, \PHPCR\Query\RowInterface
         }
     }
 
-    private function populateValues()
+    protected function populateValues()
     {
         if ($this->values != null)
         {

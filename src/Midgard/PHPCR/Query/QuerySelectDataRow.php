@@ -3,18 +3,20 @@
 namespace Midgard\PHPCR\Query;
 
 use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
+use Midgard\PHPCR\Query\QuerySelectDataResult;
 use \MidgardSqlQueryRow;
+use Midgard\PHPCR\Utils\NodeMapper;
 
 class QuerySelectDataRow extends Row
 {
-    protected $results = null;
     protected $session = null;
     protected $midgardRow = null;
     protected $holder = null;
 
-    public function __construct(QuerySelectDataHolder $holder, $score, MidgardSqlQueryRow $midgardRow)
+    public function __construct(QuerySelectDataResult $result, $score, MidgardSqlQueryRow $midgardRow)
     {
-        $this->holder = $holder;
+        $this->queryResult = $result;
+        $this->holder = $result->getHolder();
         $this->score = $score;
         $this->midgardRow = $midgardRow;
     }
@@ -46,15 +48,19 @@ class QuerySelectDataRow extends Row
 
     public function getValue($columnName)
     {
-        return $this->midgardRow->get_value($columnName);
+        $parts = explode('.', $columnName);
+        $selectorName = $parts[0];
+        $colName = $parts[1];
+        $name = NodeMapper::getMidgardPropertyName($colName);
+
+        return $this->midgardRow->get_value($name);
     }
 
-    private function populateValues()
+    protected function populateValues()
     {
         if ($this->values != null) {
             return;
         }
-        
         $this->values = array();
         $this->indexes = array();
         $columns = $this->queryResult->getColumnNames();
