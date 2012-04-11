@@ -146,7 +146,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
             if ($this->isNativeProperty($realClassName, $midgardName) === false) {
                 /* Fallback to default midgard_node_property storage */
                 $realPropertyName = 'value';
-                $realClassName = self::NODE_PROPERTY;
+                $realClassName = QueryNameMapper::NODE_PROPERTY;
                 $addJoin = true;
             }
 
