@@ -2,6 +2,8 @@
 
 namespace Midgard\PHPCR\Query\QOM;
 
+use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
+
 /**
  * {@inheritDoc}
  */
@@ -106,5 +108,10 @@ class Join extends QuerySelectHelper implements \PHPCR\Query\QOM\JoinInterface
     public function getJoinCondition()
     {
         return $this->condition;
+    }
+
+    public function addMidgard2QSDConstraints(QuerySelectDataHolder $holder)
+    {
+        $this->getJoinCondition()->addMidgard2QSDConstraints($holder);
     }
 }

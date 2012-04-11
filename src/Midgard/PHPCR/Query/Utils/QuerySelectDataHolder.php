@@ -96,7 +96,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
     public function getQueryResult()
     {
         /* Let every source add their constraints */
-        $this->query->getSource()->addMidgard2Constraints($this);
+        $this->query->getSource()->addMidgard2QSDConstraints($this);
         
         /* Execute the query */
         $this->executeQuery();

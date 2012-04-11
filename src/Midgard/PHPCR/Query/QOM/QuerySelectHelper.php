@@ -53,13 +53,13 @@ class QuerySelectHelper
         return;
     }
 
-    public function addMidgard2Constraints(QuerySelectDataHolder $holder) 
+    public function addMidgard2QSDConstraints(QuerySelectDataHolder $holder) 
     {
-        throw new \Exception (get_class($this) . "::" . "addMidgard2Constraints NOT IMPLEMENTED ");
+        throw new \PHPCR\RepositoryException (get_class($this) . "::" . "addMidgard2QSDConstraints NOT IMPLEMENTED ");
     }
 
     public function getAllColumns(QuerySelectDataHolder $holder) 
     {
-        throw new \Exception (get_class($this) . "::" . "getAllColumns NOT IMPLEMENTED ");
+        throw new \PHPCR\RepositoryException (get_class($this) . "::" . "getAllColumns NOT IMPLEMENTED ");
     }
 }

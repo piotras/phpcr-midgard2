@@ -38,7 +38,7 @@ class Selector extends QuerySelectHelper implements \PHPCR\Query\QOM\SelectorInt
         return $this->name;
     }
 
-    public function addMidgard2Constraints(QuerySelectDataHolder $holder)
+    public function addMidgard2QSDConstraints(QuerySelectDataHolder $holder)
     {
         $column = new MidgardSqlQueryColumn(
             new MidgardQueryProperty('typename', $holder->getMidgard2QueryNodeStorage($this->name)),
