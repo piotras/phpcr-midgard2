@@ -16,7 +16,7 @@ class QuerySelectHelper
         $this->holder->setMidgardStorageName(NodeMapper::getMidgardName($this->getNodeTypeName()));
     }
 
-    public function normalizeName($name)
+    public static function normalizeName($name)
     {
         $n = trim($name);
         if (strpos($n, '[') !== false) {
@@ -25,7 +25,7 @@ class QuerySelectHelper
         return NodeMapper::getMidgardPropertyName($n);
     }
 
-    public function mapJoinType($jcrJoin)
+    public static function mapJoinType($jcrJoin)
     {
         if ($jcrJoin == 'jcr.join.type.inner')
             return 'INNER';
@@ -35,7 +35,7 @@ class QuerySelectHelper
             return 'RIGHT';
     }
 
-    public function mapOperatorType($type)
+    public static function mapOperatorType($type)
     {
         if ($type == 'jcr.operator.equal.to') {
             return "=";
