@@ -48,9 +48,12 @@ class QuerySelectDataRow extends Row
 
     public function getValue($columnName)
     {
-        $parts = explode('.', $columnName);
-        $selectorName = $parts[0];
-        $colName = $parts[1];
+        $colName = $columnName;
+        if (strpos($columnName, '.') !== false) {
+            $parts = explode('.', $columnName);
+            $selectorName = $parts[0];
+            $colName = $parts[1];
+        }
         $name = NodeMapper::getMidgardPropertyName($colName);
 
         return $this->midgardRow->get_value($name);
