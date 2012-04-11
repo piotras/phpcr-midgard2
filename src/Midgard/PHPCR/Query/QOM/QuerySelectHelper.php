@@ -35,6 +35,13 @@ class QuerySelectHelper
             return 'RIGHT';
     }
 
+    public function mapOperatorType($type)
+    {
+        if ($type == 'jcr.operator.equal.to') {
+            return "=";
+        }
+    }
+
     public function getNodeTypeName()
     {
         return null;

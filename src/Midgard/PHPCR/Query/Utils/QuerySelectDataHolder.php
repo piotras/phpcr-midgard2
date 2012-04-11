@@ -57,7 +57,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
 
     protected function executeQuery()
     {
-        //echo "\n PHPCR QUERY : \n" . $this->query->getStatement() . "\n";
+        echo "\n PHPCR QUERY : \n" . $this->query->getStatement() . "\n";
         $querySelect = $this->getQuerySelect();
 
         /* Set limit */
@@ -71,7 +71,12 @@ class QuerySelectDataHolder extends QuerySelectHolder
         if ($offset > 0) {
             $querySelect->set_offset($offset);
         }
-     
+
+        $constraint = $this->query->getCOnstraint();
+        if ($constraint != null) {
+            $constraint->addMidgard2QSDCOnstraints($this);
+        }
+
         /* Ugly hack to satisfy JCR Query.
          * We use SQL so offset without limit is RDBM provider specific.
          * In SQLite you can set negative limit which is invalid in MySQL for example. */
@@ -81,10 +86,10 @@ class QuerySelectDataHolder extends QuerySelectHolder
 
         try {
             $querySelect->execute();
-            //print "\n MIDGARD QUERY : \n " . $querySelect->get_query_string() . " \n";
+            print "\n MIDGARD QUERY : \n " . $querySelect->get_query_string() . " \n";
         } catch (\Exception $e) {
-            //print "\n EXCEPTION MIDGARD QUERY : \n " . $querySelect->get_query_string() . " \n";
-            //print $e->getMessage();
+            print "\n EXCEPTION MIDGARD QUERY : \n " . $querySelect->get_query_string() . " \n";
+            print $e->getMessage();
         }
     }
 

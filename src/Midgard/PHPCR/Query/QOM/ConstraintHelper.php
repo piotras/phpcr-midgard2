@@ -1,5 +1,8 @@
 <?php
+
 namespace Midgard\PHPCR\Query\QOM;
+
+use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
 
 class ConstraintHelper
 {
@@ -11,5 +14,10 @@ class ConstraintHelper
     public function removeQuotes($value)
     {
         return str_replace('"', '', $value);        
+    }
+
+    public function addMidgard2QSDConstraints(QuerySelectDataHolder $holder)
+    {
+        throw new \PHPCR\RepositoryException(get_class($this) . "::addMidgard2QSDCOnstraints NOT IMPLEMENTED");
     }
 }
