@@ -46,11 +46,18 @@ class QuerySelectDataHolder extends QuerySelectHolder
         return $this->querySelect;
     }
 
-    public function getQuerySelect()
+    private function initializeMidgard2QuerySelectData()
     {
         if ($this->querySelect === null) {
             $this->querySelect = new MidgardSqlQuerySelectData(midgard_connection::get_instance());
             $this->setMidgardQueryColumns();
+        }
+    }
+
+    public function getQuerySelect()
+    {
+        if ($this->querySelect == null) {
+            $this->initializeMidgard2QuerySelectData();
         }
         return $this->querySelect;
     }
@@ -95,6 +102,9 @@ class QuerySelectDataHolder extends QuerySelectHolder
 
     public function getQueryResult()
     {
+        /* Initialize underlying QuerySelectData */
+        $this->initializeMidgard2QuerySelectData();
+
         /* Let every source add their constraints */
         $this->query->getSource()->addMidgard2QSDConstraints($this);
         
@@ -155,7 +165,9 @@ class QuerySelectDataHolder extends QuerySelectHolder
                 $addJoin = true;
             }
 
+            echo "CHECK $selectorName ";
             if (!isset($this->midgardQueryColumns[$selectorName]['storage'])) {
+                echo "SET SELECTOR $selectorName \n";
                 $this->midgardQueryColumns[$selectorName]['storage'] = new MidgardQueryStorage($realClassName);
             }
 
@@ -263,7 +275,19 @@ class QuerySelectDataHolder extends QuerySelectHolder
             }
             return $this->midgardQueryColumns[$selectorName]['nodeStorage'];
         }
-        return $this->getDefaultNodeStorage();
+        return null;
+    }
+
+    public function getMidgard2QueryNodePropertyStorage($selectorName)
+    {
+        print_r(array_keys($this->midgardQueryColumns));
+        if (isset($this->midgardQueryColumns[$selectorName])) {
+            if (!isset($this->midgardQueryColumns[$selectorName]['storage'])) {
+                $this->midgardQueryColumns[$selectorName]['storage'] = new MidgardQueryStorage('midgard_node_property');
+            }
+            return $this->midgardQueryColumns[$selectorName]['storage'];
+        }
+        return null;
     }
 
     public function getPropertyStorage()
