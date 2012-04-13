@@ -115,13 +115,14 @@ class QuerySelectDataHolder extends QuerySelectHolder
         return new QuerySelectDataResult($this);
     }
 
-    private function getSelectorByName($name) 
+    public function getSelectorByName($name) 
     {
         foreach ($this->query->getSelectors() as $selector) {
            if ($selector->getSelectorName() == $name) {
                 return $selector;
             }
         }
+        return null;
     }
 
     private function isNativeProperty($classname, $property)
@@ -164,10 +165,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
                 $realClassName = QueryNameMapper::NODE_PROPERTY;
                 $addJoin = true;
             }
-
-            echo "CHECK $selectorName ";
-            if (!isset($this->midgardQueryColumns[$selectorName]['storage'])) {
-                echo "SET SELECTOR $selectorName \n";
+            if (!isset($this->midgardQueryColumns[$selectorName]['storage'])) { 
                 $this->midgardQueryColumns[$selectorName]['storage'] = new MidgardQueryStorage($realClassName);
             }
 
