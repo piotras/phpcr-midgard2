@@ -2,6 +2,10 @@
 
 namespace Midgard\PHPCR\Query\QOM;
 
+use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
+use \MidgardSqlQueryColumn;
+use \MidgardQueryProperty;
+
 /**
  * {@inheritDoc}
  */
@@ -90,5 +94,38 @@ class EquiJoinCondition extends ConditionHelper implements \PHPCR\Query\QOM\Equi
             $i++;
         }
         return $result;
+    }
+
+    public function addMidgard2QSDConstraints(QuerySelectDataHolder $holder)
+    {
+        $selectorNameFirst = $this->selectorFirst;
+        $nameFirst = $this->nameFirst;
+        $selectorNameSecond = $this->selectorSecond;
+        $nameSecond = $this->nameSecond;
+
+        $selectorFirst = $holder->getSelectorByName($selectorNameFirst);
+        $selectorSecond = $holder->getSelectorByName($selectorNameSecond);
+
+        /* Create Midgard columns */
+        $storage = $holder->getPropertyStorage();
+        $firstColumn = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('value', $storage),
+            $selectorNameFirst,
+            $nameFirst
+        );
+
+        $secondColumn = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('value', $storage),
+            $selectorNameSecond,
+            $nameSecond
+        );
+
+        /* Add join on created columns */
+        $querySelect = $holder->getQuerySelect();
+        $querySelect->add_join(
+            'INNER',
+            $firstColumn,
+            $secondColumn
+        );
     }
 }
