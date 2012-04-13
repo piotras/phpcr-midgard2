@@ -1,6 +1,7 @@
 <?php
 
 namespace Midgard\PHPCR\Query\QOM;
+use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
 
 /**
  * {@inheritDoc}
@@ -69,5 +70,10 @@ class ChildNode extends ConstraintHelper implements \PHPCR\Query\QOM\ChildNodeIn
         }
 
         return $constraints;
+    }
+    
+    public function addMidgard2QSDConstraints(QuerySelectDataHolder $holder)
+    {
+        echo "  FIXME : " .$this->selectorName . " , " . $this->parentPath ."\n";
     }
 }
