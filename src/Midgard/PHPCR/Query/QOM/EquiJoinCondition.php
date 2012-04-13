@@ -3,6 +3,8 @@
 namespace Midgard\PHPCR\Query\QOM;
 
 use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
+use Midgard\PHPCR\Query\Utils\QueryNameMapper;
+use Midgard\PHPCR\Utils\NodeMapper;
 use \MidgardSqlQueryColumn;
 use \MidgardQueryProperty;
 
@@ -106,26 +108,103 @@ class EquiJoinCondition extends ConditionHelper implements \PHPCR\Query\QOM\Equi
         $selectorFirst = $holder->getSelectorByName($selectorNameFirst);
         $selectorSecond = $holder->getSelectorByName($selectorNameSecond);
 
+        $storageProperty = $holder->getPropertyStorage();
+        $storage = $holder->getDefaultNodeStorage();
+        $cg = $holder->getDefaultConstraintGroup();
+
         /* Create Midgard columns */
-        $storage = $holder->getPropertyStorage();
         $firstColumn = new MidgardSqlQueryColumn(
-            new MidgardQueryProperty('value', $storage),
+            new MidgardQueryProperty('value', $storageProperty),
             $selectorNameFirst,
             $nameFirst
         );
 
         $secondColumn = new MidgardSqlQueryColumn(
-            new MidgardQueryProperty('value', $storage),
+            new MidgardQueryProperty('value', $storageProperty),
             $selectorNameSecond,
             $nameSecond
         );
 
         /* Add join on created columns */
+        /* ON (source.value = target.value) */
         $querySelect = $holder->getQuerySelect();
         $querySelect->add_join(
             'INNER',
             $firstColumn,
             $secondColumn
+        );
+
+        /* Add property name constraints */
+        /* AND (source.title = PROP1) AND (target.name = PROP2) */
+        $column = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('name', $storageProperty),
+            $selectorNameFirst,
+            $nameFirst
+        );
+        $cg->add_constraint(
+            new \MidgardSqlQueryConstraint($column,
+                "=",
+                new \MidgardQueryValue(QuerySelectHelper::NormalizeName($nameFirst))
+            )
+        );
+        $column = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('name', $storageProperty),
+            $selectorNameSecond,
+            $nameSecond
+        );
+        $cg->add_constraint(
+            new \MidgardSqlQueryConstraint($column,
+                "=",
+                new \MidgardQueryValue(QuerySelectHelper::NormalizeName($nameSecond))
+            )
+        );
+
+        /* Join second property on second node */
+        $secondColumn = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('parent', $storageProperty),
+            $selectorNameSecond,
+            $nameSecond
+        );
+        
+        $secondColumnNode = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('id', $storage),
+            $selectorNameSecond . "_node",
+            'second_node_id'
+        );
+
+        /* Add join on created columns */
+        /* ON (target.parent = target_node.id) */
+        $querySelect->add_join(
+            'INNER',
+            $secondColumn,
+            $secondColumnNode
+        );
+
+        /* Add typename constraints */
+        /* AND (midgard_node_qualifier.typename = 'nt_unstructured') AND (target_node.typename = 'nt_unstructured')) */
+        $firstColumnType = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('typename', $storage),
+            QueryNameMapper::NODE_QUALIFIER,
+            'typename'
+        );
+        $secondColumnType = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('typename', $storage),
+            $secondColumnNode->get_qualifier(),
+            'typename'
+        );
+ 
+        $cg->add_constraint(
+            new \MidgardSqlQueryConstraint($firstColumnType,
+                "=",
+                new \MidgardQueryValue(NodeMapper::getMidgardName($selectorFirst->getNodeTypeName()))
+            )
+        );
+
+        $cg->add_constraint(
+            new \MidgardSqlQueryConstraint($secondColumnType,
+                "=",
+                new \MidgardQueryValue(NodeMapper::getMidgardName($selectorSecond->getNodeTypeName()))
+            )
         );
     }
 }
