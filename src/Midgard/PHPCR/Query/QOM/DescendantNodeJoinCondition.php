@@ -95,15 +95,8 @@ class DescendantNodeJoinCondition extends ConditionHelper implements \PHPCR\Quer
         $ancestSelector = null;
 
         /* From query get selectors defined for this join */
-        $selectors = $holder->getSQLQuery()->getSelectors();
-        foreach ($selectors as $selector) {
-            if ($selector->getSelectorName() == $this->descendantSelector) {
-                $descendSelector = $selector;
-            }
-            if ($selector->getSelectorName() == $this->ancestorSelector) {
-                $ancestSelector = $selector;
-            }
-        }
+        $descendSelector = $holder->getSelectorByName($this->descendantSelector);
+        $ancestSelector = $holder->getSelectorByName($this->ancestorSelector);
 
         /* Set descendant and ancestor identifiers used in join */
         $descendName = $descendSelector->getSelectorName();
