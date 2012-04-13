@@ -4,6 +4,7 @@ namespace Midgard\PHPCR\Query\QOM;
 
 use Midgard\PHPCR\Utils\NodeMapper;
 use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
+use Midgard\PHPCR\Query\Utils\QueryNameMapper;
 use \MidgardSqlQueryColumn;
 use \MidgardQueryProperty;
 use \MidgardSqlQueryConstraint;
@@ -90,11 +91,10 @@ class DescendantNodeJoinCondition extends ConditionHelper implements \PHPCR\Quer
 
     public function addMidgard2QSDConstraints(QuerySelectDataHolder $holder)
     {
-        echo "DESCENT " . $this->descendantSelector . "\n";
-        echo "ANCEST " .  $this->ancestorSelector . "\n";
-
         $descendSelector = null;
         $ancestSelector = null;
+
+        /* From query get selectors defined for this join */
         $selectors = $holder->getSQLQuery()->getSelectors();
         foreach ($selectors as $selector) {
             if ($selector->getSelectorName() == $this->descendantSelector) {
@@ -105,38 +105,66 @@ class DescendantNodeJoinCondition extends ConditionHelper implements \PHPCR\Quer
             }
         }
 
+        /* Set descendant and ancestor identifiers used in join */
+        $descendName = $descendSelector->getSelectorName();
+        $descendNodeType = $descendSelector->getNodeTypeName();
+        //echo "DESCENT  $descendName $descendNodeType  \n";
+        $descendStorage = $holder->getMidgard2QueryNodeStorage($descendName);
         $descendColumn = new MidgardSqlQueryColumn(
-            new MidgardQueryProperty('parent'),
-            $descendSelector->getSelectorName(),
-            'midgard_node_descendant_parent_id'
+            new MidgardQueryProperty('parent', $descendStorage),
+            QueryNameMapper::NODE_QUALIFIER,
+            'midgard_node_descendant_id'
         );
 
+        $ancestName = $ancestSelector->getSelectorName();
+        $ancestNodeType = $ancestSelector->getNodeTypeName();
+        $ancestStorage = $holder->getMidgard2QueryNodeStorage($ancestName);
+        if ($ancestStorage == null) {
+            $ancestStorage = $holder->getMidgard2QueryNodeStorage($descendName);
+        }
+        //echo "ANCEST $ancestName $ancestNodeType \n";
         $ancestColumn = new MidgardSqlQueryColumn(
-            new MidgardQueryProperty('id'),
-            $ancestSelector->getSelectorName(),
+            new MidgardQueryProperty('id', $ancestStorage),
+            $ancestName,
             'midgard_node_ancestor_id'
         );
 
-        $holder->getQuerySelect()->add_join(
+        /* Join descendant and ancestor */
+        $querySelect = $holder->getQuerySelect();
+        $querySelect->add_join(
             'INNER',
             $descendColumn,
             $ancestColumn
         );
 
-        $cg = $holder->getDefaultConstraintGroup();
-        $cg->add_constraint(
-            new \MidgardSqlQueryConstraint($descendColumn,
-                "=",
-                new \MidgardQueryValue(NodeMapper::getMidgardName($descendSelector->getSelectorName()))
-            )
-        );
-        $cg->add_constraint(
-            new \MidgardSqlQueryConstraint($ancestColumn,
-                "=",
-                new \MidgardQueryValue(NodeMapper::getMidgardName($descendSelector->getSelectorName()))
-            )
+        $querySelect->add_column($descendColumn);
+        $querySelect->add_column($ancestColumn);
+
+        /* Add descendant and ancestor typename constraints */
+        $descendColumnType = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('typename', $descendStorage),
+            $descendColumn->get_qualifier(),
+            'midgard_node_descendant_type'
         );
 
-        //throw new \PHPCR\RepositoryException (get_class($this) . "::" . "addMidgard2QSDConstraints NOT IMPLEMENTED ");
+        $ancestColumnType = new MidgardSqlQueryColumn(
+            new MidgardQueryProperty('typename', $ancestStorage),
+            $ancestName,
+            'midgard_node_ancestor_type'
+        );
+
+        $cg = $holder->getDefaultConstraintGroup();
+        $cg->add_constraint(
+            new \MidgardSqlQueryConstraint($descendColumnType,
+                "=",
+                new \MidgardQueryValue(NodeMapper::getMidgardName($descendNodeType))
+            )
+        );
+        $cg->add_constraint(
+            new \MidgardSqlQueryConstraint($ancestColumnType,
+                "=",
+                new \MidgardQueryValue(NodeMapper::getMidgardName($ancestNodeType))
+            )
+        );
     }
 }
