@@ -35,6 +35,9 @@ class Selector extends QuerySelectHelper implements \PHPCR\Query\QOM\SelectorInt
      */
     public function getSelectorName()
     {
+        if ($this->name == null) {
+            $this->name = $this->getNodeTypeName();
+        }
         return $this->name;
     }
 
