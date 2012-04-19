@@ -3,6 +3,7 @@ namespace Midgard\PHPCR\Query\Utils;
 
 class QueryNameMapper 
 {
+    const NODE = 'midgard_node';
     const NODE_QUALIFIER = 'midgard_node_qualifier';
     const NODE_GUID = 'midgard_node_guid';
     const NODE_ID = 'midgard_node_id';
