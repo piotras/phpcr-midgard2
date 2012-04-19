@@ -23,7 +23,7 @@ class NodeMapper
                 $midgardNames[$type] = $type;
                 return $type;
             }
-            return null;
+            return $type;
         }
 
         if (substr($type, 0, 4) == 'mgd:') {
