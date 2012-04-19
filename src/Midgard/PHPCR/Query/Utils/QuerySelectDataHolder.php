@@ -10,40 +10,18 @@ use \MidgardQueryStorage;
 use Midgard\PHPCR\Utils\NodeMapper;
 use Midgard\PHPCR\Query\Utils\QueryNameMapper;
 use Midgard\PHPCR\Query\QuerySelectDataResult;
+use Midgard\PHPCR\Query\SelectData\NodeExecutor;
+use Midgard\PHPCR\Query\SelectData\PropertyExecutor;
 
 class QuerySelectDataHolder extends QuerySelectHolder
 {
     protected $midgardQueryColumns = array();
+    protected $nodeExecutor = null;
+    protected $propertyExecutor = null;
 
     public function __construct (SQLQuery $query)
     {
         parent::__construct($query);
-    }
-
-    public function getQuerySelectTMP()
-    {
-        if ($this->querySelect == null) {
-            $this->querySelect = new \midgard_query_select($this->getDefaultNodeStorage());
-        
-            /* Implictly add nodetype constraint */
-            $this->getDefaultConstraintGroup()->add_constraint(
-                new \midgard_query_constraint(
-                    new \midgard_query_property("typename"),
-                    "=",
-                    new \midgard_query_value($this->getMidgardStorageName())
-                )
-            );
-
-            /* Workaround for 'invalid number of operands' */
-            $this->getDefaultConstraintGroup()->add_constraint(
-                new \midgard_query_constraint(
-                    new \midgard_query_property("typename"),
-                    "<>",
-                    new \midgard_query_value("")
-                )
-            );
-        }
-        return $this->querySelect;
     }
 
     private function initializeMidgard2QuerySelectData()
@@ -66,6 +44,12 @@ class QuerySelectDataHolder extends QuerySelectHolder
     {
         echo "\n PHPCR QUERY : \n" . $this->query->getStatement() . "\n";
         $querySelect = $this->getQuerySelect();
+
+        $this->nodeExecutor = new NodeExecutor($this);
+        $this->nodeExecutor->executeQuery(); 
+
+        $this->propertyExecutor = new PropertyExecutor($this);
+        $this->propertyExecutor->executeQuery(); 
 
         /* Set limit */
         $limit = $this->query->getLimit();
@@ -111,6 +95,9 @@ class QuerySelectDataHolder extends QuerySelectHolder
         /* Execute the query */
         $this->executeQuery();
 
+        $this->nodeExecutor->getQueryResult();
+        $this->propertyExecutor->getQueryResult();
+
         /* Return Result */
         return new QuerySelectDataResult($this);
     }
@@ -151,13 +138,14 @@ class QuerySelectDataHolder extends QuerySelectHolder
     {
         $querySelect = $this->getQuerySelect();
         foreach ($columns as $column) {
+            $column->setQuery($this->query);
             $selectorName = $column->getSelectorName();
             $midgardName = NodeMapper::getMidgardPropertyName(str_replace(array('[', ']'), '', $column->getPropertyName()));
             $realPropertyName = $midgardName;
             $selector = $this->getSelectorByName($selectorName);
             $nodeTypeName = is_object($selector) ? $selector->getNodeTypeName() : $selectorName;
             $nodeTypeName = NodeMapper::getMidgardName(str_replace(array('[', ']'), '', $nodeTypeName));
-            $realClassName = $nodeTypeName;
+            $realClassName = NodeMapper::getMidgardName($nodeTypeName);
 
             if ($this->isNativeProperty($realClassName, $midgardName) === false) {
                 /* Fallback to default midgard_node_property storage */
@@ -179,6 +167,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
             if ($safeSelectorName == '' && $safeSelectorName == null) {
                 $safeSelectorName = $nodeTypeName;
             }
+            $safeSelectorName = NodeMapper::getMidgardName($safeSelectorName);
 
             if (!isset($this->midgardQueryColumns[$selectorName]['join']) || $this->midgardQueryColumns[$selectorName]['join'] === false) {
 
