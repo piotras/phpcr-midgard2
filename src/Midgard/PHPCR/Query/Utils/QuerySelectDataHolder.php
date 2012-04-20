@@ -12,6 +12,7 @@ use Midgard\PHPCR\Query\Utils\QueryNameMapper;
 use Midgard\PHPCR\Query\QuerySelectDataResult;
 use Midgard\PHPCR\Query\SelectData\NodeExecutor;
 use Midgard\PHPCR\Query\SelectData\PropertyExecutor;
+use Midgard\PHPCR\Query\SelectData\Result;
 
 class QuerySelectDataHolder extends QuerySelectHolder
 {
@@ -98,6 +99,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
         $this->nodeExecutor->getQueryResult();
         $this->propertyExecutor->getQueryResult();
 
+        return new Result($this, $this->nodeExecutor->mergeResult($this->propertyExecutor););
         /* Return Result */
         return new QuerySelectDataResult($this);
     }
