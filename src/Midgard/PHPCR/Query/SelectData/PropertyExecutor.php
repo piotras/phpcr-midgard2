@@ -16,8 +16,6 @@ use \MidgardConnection;
 
 class PropertyExecutor extends Executor
 {
-    private $executors = null;
-
     public function __construct(QuerySelectDataHolder $holder)
     {
         $this->holder = $holder;
@@ -99,9 +97,17 @@ class PropertyExecutor extends Executor
         $this->executors[]= $qs;
     }
 
+    public function getExecutors()
+    {
+        return $this->executors;
+    }
+
     public function getQueryResult()
     {
-        $ret = array();
+        if ($this->result != null) {
+            return $this->result;
+        }
+        $this->result = array();
         foreach ($this->executors as $e) {
             try {
                 $qr = $e->get_query_result();
@@ -109,10 +115,9 @@ class PropertyExecutor extends Executor
                 die ($e->getMessage());
             }
             foreach ($qr->get_rows() as $row) {
-                $ret[$row->get_value(QueryNameMapper::NODE_GUID)] = $row->get_value("name");
+                $this->result[$row->get_value(QueryNameMapper::NODE_GUID)][$row->get_value("name")] = $row->get_value("value");
             }
         }
-        print_r($ret);
-        return $ret;
+        return $this->result;
     }
 }
