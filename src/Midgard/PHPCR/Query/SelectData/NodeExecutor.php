@@ -12,8 +12,6 @@ use Midgard\PHPCR\Query\Utils\QueryNameMapper;
 
 class NodeExecutor extends Executor
 {
-    private $executors = null;
-
     public function __construct(QuerySelectDataHolder $holder)
     {
         $this->holder = $holder;
@@ -41,16 +39,30 @@ class NodeExecutor extends Executor
         }
     }
 
+    public function getExecutors()
+    {
+        return $this->executors;
+    }
+
     public function getQueryResult()
     {
-        $ret = array();
+        if ($this->result != null) {
+            return $this->result;
+        }
+        $this->result = array();
         foreach ($this->executors as $e) {
             $objects = $e->list_objects();
             foreach ($objects as $o) {
-                $ret[$o->guid] = $o->name;
+                $this->result[$o->guid] = null;
             }
-        }
-        var_dump($ret);
-        return $ret;
+        } 
+        return $this->result;
+    }
+
+    public function mergeResult(Executor $executor)
+    {
+        $ret = $this->getQueryResult();
+        $exret = $executor->getQueryResult();
+        return array_merge($ret, $exret);
     }
 }
