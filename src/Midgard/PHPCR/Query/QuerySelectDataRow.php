@@ -3,6 +3,7 @@
 namespace Midgard\PHPCR\Query;
 
 use Midgard\PHPCR\Query\Utils\QuerySelectDataHolder;
+use Midgard\PHPCR\Query\Utils\QueryNameMapper;
 use Midgard\PHPCR\Query\QuerySelectDataResult;
 use \MidgardSqlQueryRow;
 use Midgard\PHPCR\Utils\NodeMapper;
@@ -12,6 +13,7 @@ class QuerySelectDataRow extends Row
     protected $session = null;
     protected $midgardRow = null;
     protected $holder = null;
+    protected $node = null;
 
     public function __construct(QuerySelectDataResult $result, $score, MidgardSqlQueryRow $midgardRow)
     {
@@ -32,7 +34,12 @@ class QuerySelectDataRow extends Row
 
     public function getNode($selectorName = null)
     {
-        throw new \Exception("TO IMPLEMENT");
+        if ($this->node != null) {
+            return $this->node;
+        }
+        $guid = $this->midgardRow->get_value(QueryNameMapper::NODE_GUID);
+        $this->node = $this->holder->getSession()->getNodeRegistry()->getByMidgardGuid($guid);
+        return $this->node;
     }
 
     public function getPath($selectorName = null)
