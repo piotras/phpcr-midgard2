@@ -56,12 +56,51 @@ class Result extends QueryResult
         return $this->nodes;
     }
 
+    protected function orderResult()
+    {
+        $orderings = $this->holder->getSQLQuery()->getOrderings();
+        if (empty($orderings)) {
+            return;
+        }
+
+        $properties = array();
+        foreach ($orderings as $ordering)
+        {
+            if (!($ordering->getOperand() instanceOf \Midgard\PHPCR\Query\QOM\PropertyValue)) {
+                throw new \PHPCR\RepositoryException(get_class($ordering->getOperand()) ." operand not supported");
+            }
+            $properties[$ordering->getOperand()->getPropertyName()] = $ordering->getOrder();
+        }
+
+        $tmp = array();
+        foreach ($properties as $property => $order) {
+            foreach ($this->result as $guid => $p) {
+                if (isset($this->result[$guid][$property])) {
+                    $tmp[$guid] = $this->result[$guid][$property];
+                } else {
+                    $tmp[$guid] = null;
+                }
+            }
+            if ($order == 'jcr.order.ascending') {
+                asort($tmp, SORT_STRING);
+            } else {
+                arsort($tmp, SORT_STRING);
+            }
+        }
+        foreach ($tmp as $guid => $p) {
+            $tmp[$guid] = $this->result[$guid];
+        }
+        $this->result = $tmp;
+    }
+
     public function getRows()
     {
         if ($this->rows != null) {
             return $this->rows;
         }
-        
+
+        $this->orderResult();
+
         $score = 0;
         $ret = array();
         foreach ($this->result as $guid => $p) {
