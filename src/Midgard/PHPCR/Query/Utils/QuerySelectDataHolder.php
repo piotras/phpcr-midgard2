@@ -98,8 +98,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
         $constraint = $this->query->getConstraint();
         $isUnstructured = false;
         $source = $this->query->getSource();
-        if (is_a($source, '\PHPCR\Query\QOM\SelectorInterface')) {
-            echo $source->getNodeTypeName() ;
+        if (is_a($source, '\PHPCR\Query\QOM\SelectorInterface')) { 
             if ($source->getNodeTypeName() == 'nt:unstructured') {
                 $isUnstructured = true;
             }
