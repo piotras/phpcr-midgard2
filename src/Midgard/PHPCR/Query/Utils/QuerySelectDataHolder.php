@@ -46,12 +46,6 @@ class QuerySelectDataHolder extends QuerySelectHolder
         echo "\n PHPCR QUERY : \n" . $this->query->getStatement() . "\n";
         $querySelect = $this->getQuerySelect();
 
-        $this->nodeExecutor = new NodeExecutor($this);
-        $this->nodeExecutor->executeQuery(); 
-
-        $this->propertyExecutor = new PropertyExecutor($this);
-        $this->propertyExecutor->executeQuery(); 
-
         /* Set limit */
         $limit = $this->query->getLimit();
         if ($limit > 0) {
@@ -85,8 +79,35 @@ class QuerySelectDataHolder extends QuerySelectHolder
         }
     }
 
+    private function getExecutorsResult()
+    {
+        $this->nodeExecutor = new NodeExecutor($this);
+        $this->nodeExecutor->executeQuery(); 
+
+        $this->propertyExecutor = new PropertyExecutor($this);
+        $this->propertyExecutor->executeQuery(); 
+
+        $this->nodeExecutor->getQueryResult();
+        $this->propertyExecutor->getQueryResult();
+
+        return new Result($this, $this->nodeExecutor->mergeResult($this->propertyExecutor));
+    }
+
     public function getQueryResult()
     {
+        $constraint = $this->query->getConstraint();
+        $isUnstructured = false;
+        $source = $this->query->getSource();
+        if (is_a($source, '\PHPCR\Query\QOM\SelectorInterface')) {
+            echo $source->getNodeTypeName() ;
+            if ($source->getNodeTypeName() == 'nt:unstructured') {
+                $isUnstructured = true;
+            }
+        }
+        if ($constraint == null && $isUnstructured == true) {
+            return $this->getExecutorsResult();
+        }
+
         /* Initialize underlying QuerySelectData */
         $this->initializeMidgard2QuerySelectData();
 
@@ -96,10 +117,6 @@ class QuerySelectDataHolder extends QuerySelectHolder
         /* Execute the query */
         $this->executeQuery();
 
-        $this->nodeExecutor->getQueryResult();
-        $this->propertyExecutor->getQueryResult();
-
-        return new Result($this, $this->nodeExecutor->mergeResult($this->propertyExecutor));
         /* Return Result */
         return new QuerySelectDataResult($this);
     }
