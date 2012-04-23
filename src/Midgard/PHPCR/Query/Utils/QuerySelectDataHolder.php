@@ -99,7 +99,7 @@ class QuerySelectDataHolder extends QuerySelectHolder
         $this->nodeExecutor->getQueryResult();
         $this->propertyExecutor->getQueryResult();
 
-        return new Result($this, $this->nodeExecutor->mergeResult($this->propertyExecutor););
+        return new Result($this, $this->nodeExecutor->mergeResult($this->propertyExecutor));
         /* Return Result */
         return new QuerySelectDataResult($this);
     }
