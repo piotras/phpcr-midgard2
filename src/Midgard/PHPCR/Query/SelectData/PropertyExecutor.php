@@ -92,7 +92,9 @@ class PropertyExecutor extends Executor
         try {
             $qs->execute();
         } catch (\Exception $e) {
+            echo $this->query->getStatement();
             echo $qs->get_query_string();
+            throw $e;
         }
         $this->executors[]= $qs;
     }
